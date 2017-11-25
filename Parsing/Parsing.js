@@ -2,7 +2,7 @@
 
 
 //文法定义
-let G = ['S->AB', 'S->bC', 'A->ε', 'A->b', 'B->ε', 'B->aD', 'C->AD', 'C->b', 'D->aS', 'D->c'];
+let G = ['S->AB', 'S->bCA', 'A->b', 'A->ε', 'B->ε', 'B->aD', 'C->ADE', 'C->b', 'D->aS', 'D->c', 'D->ε', 'E->e'];
 
 // let G = ['E->E+T|T', 'T->T*F|F', 'F->(E)|i'];
 let Vn = [];    //非终结符集合
@@ -69,25 +69,15 @@ Vn.map(function (value) {
 
 //求first集
 let getFirst = function (value, callback) {
-    // for (let value in first) {
-    //     G.map(function (value1) {
-    //         let value1ArrLeft = value1.split(['->'])[0];
-    //         let value1ArrRight = value1.split('->')[1];
-    //         if (value1ArrLeft === value && Vt.indexOf(valueAllSplit[i) !== -1) {  //若X∈VT，则FIRST(X)＝{X}
-    //             first[value].push(valueAllSplit[i);
-    //         }
-    //         if (value1ArrLeft === value && Vn.indexOf(valueAllSplit[i) !== -1) {  //若是非终结符X，能推导出以终结符a开头的串，那么这个终结符a属于FIRST（X），若X能够推导出空符号串ε，那么空符号串ε也属于X的FIRST集
-    //
-    //         }
-    //     })
-    // }
 
-    G.map(function (value1) {
+    G.map(function (value1) {   //一行一行分析
         let value1ArrLeft = value1.split(['->'])[0];
         let value1ArrRight = value1.split('->')[1];
-        let valueAllSplit = value1ArrRight.split('|');
+        let valueAllSplit = value1ArrRight.split('|');  //分割'|'
+
+
         for (let i in valueAllSplit) {
-            let arr = valueAllSplit[i];
+            let arr = valueAllSplit[i]; //所有的箭头右部
             if (value1ArrLeft === value && Vt.indexOf(arr[0]) !== -1) {  //若X∈VT，则FIRST(X)＝{X}
                 if (first[value].indexOf(arr[0]) === -1) {
                     if (arr[0] !== 'ε') {
@@ -96,77 +86,125 @@ let getFirst = function (value, callback) {
                             callback(1, arr[0]);
                         }
                     } else {  //可以推出空串
+                        first[value].push(arr[0]);
                         if (callback) {
                             callback(2, 'ε');
                         }
                     }
                 }
             } else if (value1ArrLeft === value && Vn.indexOf(arr[0]) !== -1) {  //若是非终结符X，能推导出以终结符a开头的串，那么这个终结符a属于FIRST（X），若X能够推导出空符号串ε，那么空符号串ε也属于X的FIRST集
-                getFirst(arr[0], function (situation, callValue) {
-                    if (situation === 1) {
-                        if (first[value].indexOf(callValue) === -1) {
-                            first[value].push(callValue);
-                            if (callback) {
-                                callback(1, callValue);
-                            }
-                        }
-                    } else if (situation === 2) {
-                        if (first[value].indexOf(callValue) === -1) {
-                            first[value].push(callValue);
-                            if (callback) {
-                                callback(3, callValue);
-                            }
-                        }
+
+
+                getFirst(arr[0]);
+                for (let j in arr) {
+
+                    getFirst(arr[j]);
+
+                    if (Vt.indexOf(arr[j]) !== -1) {   //跳出处理
+                        break;
                     }
-                });
 
-                let flag = [];    //若X∈VN；Y1，Y2，…，Yi∈VN，且有产生式X→Y1 Y2 … Yn；当Y1 Y2 … Yn-1都能推导出ε时，则FIRST(Y1)、FIRST(Y2)、…、FIRST(Yn-1)的所有非空元素和FIRST(Yn) 包含在FIRST(X)中
-                for (let i in arr) {
-                    if (Vn.indexOf(arr[i]) !== -1) {  //属于非终结符
-                        getFirst(arr[i], function (situation) {
-                            if (situation === 2) {  //有空串
-                                flag.push(1);
-                            }else{
+                    if (Vn.indexOf(arr[j]) !== -1 && j === '0') {       //第一个符号处理
 
-                            }
-                        })
-                    }
-                }
-
-                let allFlag = 0;
-                flag.map(function (val) {
-                    allFlag+=val;
-                });
-
-                if(allFlag === arr.length){
-                    getFirst();
-                    for (let i in arr) {
-                        getFirst(arr[i]);
-                        first[arr[i]].map(function (val) {
-                            if (first[value].indexOf(val) === -1) {
-                                first[value].push(val);
+                        for (let k in first[arr[0]]) {  //第一个非终结符号的first集合加入
+                            if (first[value].indexOf(first[arr[0]][k]) === -1 && first[arr[0]][k] !== 'ε') {
+                                first[value].push(first[arr[0]][k]);
                                 if (callback) {
-                                    callback(4, val);
+                                    callback(1, first[arr[0]][k]);
                                 }
                             }
+                        }
 
-                        })
+                        if (first[arr[j]].indexOf('ε') === -1) {  //  没有空串则做跳出处理
+                            break;
+                        }
+                    }
+
+                    if (Vn.indexOf(arr[j]) !== -1 && j > 0 && first[arr[j - 1]].indexOf('ε') !== -1) {//后边符号处理
+
+                        for (let k in first[arr[j]]) {
+                            if (first[value].indexOf(first[arr[j]][k]) === -1 && first[arr[j]][k] !== 'ε') {
+                                first[value].push(first[arr[j]][k]);
+                                if (callback) {
+                                    callback(1, first[arr[j]][k]);
+                                }
+                            }
+                        }
+
+                        if (first[arr[j]].indexOf('ε') === -1) {  //  没有空串则做跳出处理
+
+                            break;
+                        }
+                    }
+
+                    if (Vn.indexOf(arr[j]) !== -1 && j === arr.length.toString() && first[arr[j - 1]].indexOf('ε') !== -1 && first[arr[j]].indexOf('ε') !== -1) {    //最后一个符号'ε'再处理
+                        if (first[value].indexOf('k') === -1) {
+                            first[value].push('k');
+                            if (callback) {
+                                callback(1, 'k');
+                            }
+                        }
                     }
                 }
-
             }
         }
     })
 };
 
-Vn.map(function (value) {
+//求follow集
+let getFollow = function () {
+    Vn.map(function (value) {
+        follow[value].push('#');    //先加入#
+    });
+
+
+    G.map(function (value1) {   //一行一行分析
+        let value1ArrLeft = value1.split(['->'])[0];
+        let value1ArrRight = value1.split('->')[1];
+        let valueAllSplit = value1ArrRight.split('|');  //分割'|'
+
+
+        for (let i in valueAllSplit) {
+            let arr = valueAllSplit[i];//有的箭头右部
+
+            for(let j in arr){
+
+
+                j= parseInt(j); //改变类型
+
+                if (j > 0 && j < arr.length - 1 && Vt.indexOf(arr[j - 1]) !== -1 && Vn.indexOf(arr[j]) !== -1 && Vn.indexOf(arr[j + 1]) !== -1) {   //对于产生式：A->aBC,将除去空集e的First（C）加入Follow（B）中;
+                    if(arr[j] === 'C'){
+                        console.log(arr[j]);
+                    }
+                    for (let k in first[arr[j + 1]]) {  //第一个非终结符号的first集合加入
+                        k = parseInt(k);
+                        if (follow[arr[j]].indexOf(first[arr[j + 1]][k]) === -1 && first[arr[j + 1]][k] !== 'ε') {
+                            follow[arr[j]].push(first[arr[j + 1]][k]);
+                        }
+                    }
+                }
+            }
+
+
+        }
+    });
+};
+
+Vn.map(function (value) {   //非终结符求first集
     getFirst(value);
+
 });
 
+//非终结符求follow集
+getFollow();
+
+
 console.log(G);
-console.log(Vt);
 console.log('-----------------分界线-----------------');
+console.log('first:');
 console.log(first);
+console.log('follow:');
+console.log(follow);
 
 
-//消去左递归
+
