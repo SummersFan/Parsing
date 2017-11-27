@@ -5,13 +5,14 @@
 // let G = ['S->AB', 'S->bCA', 'A->b', 'A->ε', 'B->ε', 'B->aD', 'C->ADE', 'C->b', 'D->aS', 'D->c', 'D->ε', 'E->e'];
 
 let G = ['E->E+T|T', 'T->T*F|F', 'F->(E)|i'];
+// let G= ['S->ABBA','A->a|ε','B->b|ε'];
 let Vn = [];    //非终结符集合
 let Vt = [];    //终结符结合
 let GL = [];    //文法左部
 let RL = [];    //文法右部
 let first = {};  //first集
 let follow = {};    //follow集
-
+let inputString = 'i*i+i#';
 
 //消除左递归
 G.map(function (value, index) {
@@ -36,9 +37,15 @@ G.map(function (value, index) {
     }
 });
 
+// //消除
+// G.map(function (value,index) {
+//     let value1ArrLeft = value1.split(['->'])[0];
+//     let value1ArrRight = value1.split('->')[1];
+//     let valueAllSplit = value1ArrRight.split('|');  //分割'|'
+// });
+
 //提取左边公共因子
 G.map(function (value) {
-
 });
 
 //获得非终结符集合
@@ -79,24 +86,26 @@ let getFirst = function (value, callback) {
 
 
         for (let i in valueAllSplit) {
+
             let arr = valueAllSplit[i]; //所有的箭头右部
+
             if (value1ArrLeft === value && Vt.indexOf(arr[0]) !== -1) {  //若X∈VT，则FIRST(X)＝{X}
+
                 if (first[value].indexOf(arr[0]) === -1) {
                     if (arr[0] !== 'ε') {
                         first[value].push(arr[0]);
                         if (callback) {
                             callback(1, arr[0]);
                         }
-                    } else {  //可以推出空串
-                        first[value].push(arr[0]);
+                    }else{  //可以推出空串
+
+                        first[value].push('ε');
                         if (callback) {
                             callback(2, 'ε');
                         }
                     }
                 }
             } else if (value1ArrLeft === value && Vn.indexOf(arr[0]) !== -1) {  //若是非终结符X，能推导出以终结符a开头的串，那么这个终结符a属于FIRST（X），若X能够推导出空符号串ε，那么空符号串ε也属于X的FIRST集
-
-
                 getFirst(arr[0]);
                 for (let j in arr) {
 
@@ -312,7 +321,6 @@ let chargeLL1 = function () {
                 }
 
 
-
                 for (let k = j + 1; k < brr.length; k++) {  //条件2
                     if (typeof brr[k] === "object") {
                         char1 = brr[k].str;
@@ -320,11 +328,11 @@ let chargeLL1 = function () {
                         char1 = brr[k];
                     }
 
-                    for(let l in first[char]){
-                        if(first[char1] === undefined|| first[char1] === undefined){
+                    for (let l in first[char]) {
+                        if (first[char1] === undefined || first[char1] === undefined) {
                             continue;
                         }
-                        if(first[char1].indexOf(first[char][l]) !== -1){
+                        if (first[char1].indexOf(first[char][l]) !== -1) {
                             flag = -1;
                             return -1;
                         }
@@ -335,9 +343,9 @@ let chargeLL1 = function () {
 
         }
 
-        for(let i in first[value1ArrLeft]){
+        for (let i in first[value1ArrLeft]) {
 
-            if(follow[value1ArrLeft].indexOf(first[value1ArrLeft][i]) !== -1 ){
+            if (follow[value1ArrLeft].indexOf(first[value1ArrLeft][i]) !== -1) {
 
                 flag = -1;
                 return -1;
@@ -347,18 +355,113 @@ let chargeLL1 = function () {
     return flag;
 };
 
+
+//修改的数组
+let Vt1 = new Array();
+for(let i in Vt){
+    if(Vt[i] !== 'ε'){
+        Vt1.push(Vt[i]);
+    }
+}
+Vt1.push('#');
+
+
 //预测分析表构造函数
 let getPredictAnalyticalTable = function () {
-  let arr = new Array(Vt.length+1);
+    let arr = new Array(Vn.length + 1);
 
-  for(let i = 0 ;i < arr.length+1;i++){
-      arr[i]= new Array(Vn.length+1);
-      for(let j=0;j<Vn.length;j++){      //二维长度为5
-          arr[i][j]=1;
-      }
+    for (let i = 0; i < arr.length; i++) {
+        arr[i] = new Array(Vt1.length + 1);
 
-  }
-  console.log(arr);
+    }
+    for (let i = 0; i < arr.length; i++) {     //首先放置符号标签
+        for (let j = 0; j < Vt1.length; j++) {
+            if (i === 0) {
+                arr[0][j + 1] = '    '+Vt1[j]+'    ';
+                continue;
+            }
+            if (j === 0 && i <=Vn.length+1 ) {
+                if(Vn[i-1].length === 2){
+                    arr[i][0] = Vn[i-1];
+                }else{
+                    arr[i][0] = Vn[i-1]+' ';
+
+                }
+
+            }
+            // arr[i][j]=1;
+        }
+    }
+
+    for (let i = 0; i < arr.length; i++) {     //首先放置符号标签
+        for (let j = 0; j < Vt1.length+1; j++) {
+            if(arr[i][j] === undefined){
+                if(i!== 0 && j !== 0){
+                    arr[i][j] = '  error  ';
+                }else{
+                    arr[i][j] = '  ';
+                }
+
+            }
+        }
+    }
+
+
+
+    G.map(function (value,index) {
+        let value1ArrLeft = value.split(['->'])[0];
+        let value1ArrRight = value.split('->')[1];
+        let valueAllSplit = value1ArrRight.split('|');  //分割'|'
+
+        for(let i in valueAllSplit){
+            let brr = valueAllSplit[i]; //所有的箭头右部
+
+            if(Vn.indexOf(brr[0]) !== -1 ){
+                for(let j in first[brr[0]]){
+
+                    let a = Vn.indexOf(value1ArrLeft);
+                    let b = Vt1.indexOf(first[value1ArrLeft][j]);
+                    arr[a+1][b+1] ='  '+value1ArrLeft+'->'+brr;
+
+                }
+
+                if(first[brr[0]].indexOf('ε') !== -1){
+                    for(let j in follow[value1ArrLeft]){
+                        let a = Vn.indexOf(value1ArrLeft);
+                        let b = Vt1.indexOf(follow[value1ArrLeft][j]);
+                        arr[a+1][b+1] =value1ArrLeft+'->'+brr;
+                    }
+                }
+
+            }
+
+            if(Vt1.indexOf(brr[0]) !== -1){
+                let a = Vn.indexOf(value1ArrLeft);
+                let b = Vt1.indexOf(brr[0]);
+                arr[a+1][b+1] =value1ArrLeft+'->'+brr;
+            }
+            if(brr[0] === 'ε'){
+                for(let j in follow[value1ArrLeft]){
+
+                    let a = Vn.indexOf(value1ArrLeft);
+                    let b = Vt1.indexOf(follow[value1ArrLeft][j]);
+                    arr[a+1][b+1] =value1ArrLeft+'->'+brr;
+                }
+            }
+
+        }
+    });
+
+    let str = ' ';
+    for (let i = 0; i < arr.length; i++) {
+        str +='\n';
+        for (let j = 0; j < Vt1.length+1; j++) {
+            str += arr[i][j];
+
+        }
+    }
+    // console.log(str);
+    return arr;
 };
 
 //非终结符求first集
@@ -371,11 +474,87 @@ Vn.map(function (value) {
     getFollow(value);
 });
 
+//正式开始符号分析
+let analysisProgram = function () {
+    let stack = [];  //栈
+    let X;  // 栈顶符号
+    let a;  //当前输入符号
+    stack.push('#');    //#入栈
+    stack.push('E');
+
+    let inputArr = [];
+    for(let i in inputString){
+        inputArr.push(inputString[i]);
+    }
+
+
+    X = stack[stack.length-1];
+    a = inputArr[0];
+
+
+    let num = 0;
+    console.log("步骤       符号栈       输入串     所用产生式")
+    while(inputArr.length>0){
+        num++;
+        X = stack[stack.length-1];  //取栈顶符号
+        a = inputArr[0];
+
+        if(X === a && X==='#'){
+            console.log( num+ '      '+stack+'      '+inputArr+'  ');
+            return;
+        }else if(X === a && X !== '#'){
+
+            console.log(num+ '      '+stack+'      '+inputArr+'  ');
+            stack.pop();
+            a = inputArr.shift();
+
+        }else if(Vn.indexOf(X) !== -1){     //非终结符号
+            let x = Vn.indexOf(X);
+            let y = Vt1.indexOf(a);
+
+            x++;
+            y++;
+
+            if(PredictAnalyticalTable[x][y] === 'error'){
+                console.log( num+'      '+stack+'      '+inputArr+'  '+'error');
+                return false
+            }else{
+                console.log(num+ '      '+stack+'      '+inputArr+'  '+PredictAnalyticalTable[x][y]);
+
+                let item = PredictAnalyticalTable[x][y].split('->')[1];
+                if(item === 'ε'){   //为ε时候直接推进栈
+                    // a = inputArr.shift();
+                    stack.pop();
+
+                }else{
+                    stack.pop();
+                    let itemArr = [];
+                    for(let i in item){
+                        itemArr[i] = item[i];
+                    }
+                    for(let i = itemArr.length-1;i>=0;i--){
+                        if(itemArr[i] === '\''){
+                            let str1 = itemArr[i-1] + '\'';
+                            stack.push(str1);
+                            i--;
+                        }else{
+                            stack.push(itemArr[i]);
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+    }
+};
+
 // first['T\''].push('i');  //LL(1)文法的错误判断1
 // follow['T\''].push('ε');  //LL(1)文法的错误判断2
 
+let PredictAnalyticalTable = getPredictAnalyticalTable();
 
-getPredictAnalyticalTable();
 console.log('文法消除左递归之后的文法G:');
 console.log(G);
 console.log('-----------------分界线-----------------');
@@ -385,10 +564,22 @@ console.log('follow:');
 console.log(follow);
 console.log('-----------------分界线-----------------');
 let flag = chargeLL1();
-if(flag === -1){
+if (flag === -1) {
     console.log("该文法不是LL(1)文法");
-}else{
+} else {
     console.log("该文法是LL(1)文法,开始进行预测分析表的构造....");
 }
+console.log('-----------------分界线-----------------');
+console.log('预测分析表:');
+let str = ' ';
+for (let i = 0; i < PredictAnalyticalTable.length; i++) {
+    str +='\n';
+    for (let j = 0; j < Vt1.length+1; j++) {
+        str += PredictAnalyticalTable[i][j];
 
-
+    }
+}
+console.log(str);
+console.log('-----------------分界线-----------------');
+console.log("步骤");
+analysisProgram();
