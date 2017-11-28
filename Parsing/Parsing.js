@@ -374,7 +374,7 @@ let getPredictAnalyticalTable = function () {
         arr[i] = new Array(Vt1.length + 1);
 
     }
-    for (let i = 0; i < arr.length; i++) {     //首先放置符号标签
+    for (let i = 0; i < arr.length; i++) {     //首先放置非终结符号标签
         for (let j = 0; j < Vt1.length; j++) {
             if (i === 0) {
                 arr[0][j + 1] = '    '+Vt1[j]+'    ';
@@ -389,11 +389,10 @@ let getPredictAnalyticalTable = function () {
                 }
 
             }
-            // arr[i][j]=1;
         }
     }
 
-    for (let i = 0; i < arr.length; i++) {     //首先放置符号标签
+    for (let i = 0; i < arr.length; i++) {     //放置终结符号标签
         for (let j = 0; j < Vt1.length+1; j++) {
             if(arr[i][j] === undefined){
                 if(i!== 0 && j !== 0){
@@ -418,7 +417,6 @@ let getPredictAnalyticalTable = function () {
 
             if(Vn.indexOf(brr[0]) !== -1 ){
                 for(let j in first[brr[0]]){
-
                     let a = Vn.indexOf(value1ArrLeft);
                     let b = Vt1.indexOf(first[value1ArrLeft][j]);
                     arr[a+1][b+1] ='  '+value1ArrLeft+'->'+brr;
@@ -457,7 +455,6 @@ let getPredictAnalyticalTable = function () {
         str +='\n';
         for (let j = 0; j < Vt1.length+1; j++) {
             str += arr[i][j];
-
         }
     }
     // console.log(str);
@@ -493,7 +490,7 @@ let analysisProgram = function () {
 
 
     let num = 0;
-    console.log("步骤       符号栈       输入串     所用产生式")
+    console.log("步骤       符号栈       输入串     所用产生式");
     while(inputArr.length>0){
         num++;
         X = stack[stack.length-1];  //取栈顶符号
@@ -501,6 +498,7 @@ let analysisProgram = function () {
 
         if(X === a && X==='#'){
             console.log( num+ '      '+stack+'      '+inputArr+'  ');
+            console.log('accept!');
             return;
         }else if(X === a && X !== '#'){
 
@@ -517,6 +515,7 @@ let analysisProgram = function () {
 
             if(PredictAnalyticalTable[x][y] === 'error'){
                 console.log( num+'      '+stack+'      '+inputArr+'  '+'error');
+                console.log(false);
                 return false
             }else{
                 console.log(num+ '      '+stack+'      '+inputArr+'  '+PredictAnalyticalTable[x][y]);
@@ -550,8 +549,8 @@ let analysisProgram = function () {
     }
 };
 
-// first['T\''].push('i');  //LL(1)文法的错误判断1
-// follow['T\''].push('ε');  //LL(1)文法的错误判断2
+first['T\''].push('i');  //LL(1)文法的错误判断1
+follow['T\''].push('ε');  //LL(1)文法的错误判断2
 
 let PredictAnalyticalTable = getPredictAnalyticalTable();
 
@@ -568,18 +567,19 @@ if (flag === -1) {
     console.log("该文法不是LL(1)文法");
 } else {
     console.log("该文法是LL(1)文法,开始进行预测分析表的构造....");
-}
-console.log('-----------------分界线-----------------');
-console.log('预测分析表:');
-let str = ' ';
-for (let i = 0; i < PredictAnalyticalTable.length; i++) {
-    str +='\n';
-    for (let j = 0; j < Vt1.length+1; j++) {
-        str += PredictAnalyticalTable[i][j];
+    console.log('-----------------分界线-----------------');
+    console.log('预测分析表:');
+    let str = ' ';
+    for (let i = 0; i < PredictAnalyticalTable.length; i++) {
+        str +='\n';
+        for (let j = 0; j < Vt1.length+1; j++) {
+            str += PredictAnalyticalTable[i][j];
 
+        }
     }
+    console.log(str);
+    console.log('-----------------分界线-----------------');
+    console.log("模拟分析过程");
+    analysisProgram();
 }
-console.log(str);
-console.log('-----------------分界线-----------------');
-console.log("步骤");
-analysisProgram();
+
